@@ -1,13 +1,13 @@
 from datetime import datetime
-
+from rich.console import Console
+from rich.panel import Panel
 import requests
 
 from friends import load_friends_list, get_friends_from_json
 from utils import format_friends_list, get_friends_text, get_next_bdays_text
 from user import get_saved_user_id, save_user_id
+from classes import VKApiError
 from vk import get_vk_user_id_by_shortname
-from rich.console import Console
-from rich.panel import Panel
 
 
 vk_user_id = get_saved_user_id()
@@ -55,6 +55,26 @@ def ask_next_bday() -> bool:
     return console.input(next_bday_input_text) == '1'
 
 
+def start_parser() -> None:
+    reload = console.input('[b]Обновить данные?[/b] [[green]1[/green] - да, [red]0[/red] - нет] ') == '1'
+    if reload:
+        input_user_id = console.input(
+            'Если хотите посмотреть данные другого пользователя, введите его [b]короткое имя[/b] или [b]ID[/b] в VK.\n'
+            '🛈 Если пользователя менять не нужно, нажмите [i]Enter[/i], чтобы пропустить. '
+        )
+        if input_user_id.isdigit():
+            user_id = int(input_user_id)
+        else:
+            if input_user_id:
+                user_id = get_vk_user_id_by_shortname(shortname=input_user_id)
+            else:
+                user_id = ''
+    elif not reload or not input_user_id:
+        user_id = get_saved_user_id() 
+    next_bday = ask_next_bday()
+    parse_friends(user_id, reload=reload, next_birthday=next_bday)
+
+
 def main():  
     try:
         requests.get('https://google.com')
@@ -63,23 +83,12 @@ def main():
         next_bday = ask_next_bday()
         parse_friends_offline(next_birthday=next_bday)
     else:
-        reload = console.input('[b]Обновить данные?[/b] [[green]1[/green] - да, [red]0[/red] - нет] ') == '1'
-        if reload:
-            input_user_id = console.input(
-                'Если хотите посмотреть данные другого пользователя, введите его [b]короткое имя[/b] или [b]ID[/b] в VK.\n'
-                '🛈 Если пользователя менять не нужно, нажмите [i]Enter[/i], чтобы пропустить. '
-            )
-            if input_user_id.isdigit():
-                user_id = int(input_user_id)
-            else:
-                if input_user_id:
-                    user_id = get_vk_user_id_by_shortname(shortname=input_user_id)
-                else:
-                    user_id = ''
-        elif not reload or not input_user_id:
-            user_id = get_saved_user_id() 
-        next_bday = ask_next_bday()
-        parse_friends(user_id, reload=reload, next_birthday=next_bday)
+        try:
+            start_parser()
+        except VKApiError as e:
+            print(f'Ошибка VK API: {e}')
+        except Exception as e:
+            print(f'Возникла ошибка: {e.__class__.__name__}: {e}')
 
 
 if __name__ == '__main__':

@@ -1,15 +1,23 @@
 import codecs
 import json
 import time
+from pathlib import Path
 
 from classes import Friend
 from utils import dict_to_friend_obj
 from vk import get_friends
 
 
+def make_friends_file_path() -> Path:
+    friends_file_path = Path('saved_friends.json')
+    friends_file_path.touch()
+    return friends_file_path
+
+
 def load_friends_data_to_json(friends_list: list[dict], update_time: int) -> None:
     minimize_friends_data(friends_list)
-    with open('saved_friends.json', 'w', encoding='UTF-8') as friends_file:
+    friends_file_path = make_friends_file_path()
+    with open(friends_file_path, 'w', encoding='UTF-8') as friends_file:
         json.dump(
             {'last_time_updated': update_time, 'friends': friends_list},
             friends_file,
@@ -19,8 +27,11 @@ def load_friends_data_to_json(friends_list: list[dict], update_time: int) -> Non
 
 
 def get_friends_from_json() -> list[Friend]:
+    friends_file_path = make_friends_file_path()
     try:
-        friends_list = json.load(codecs.open('saved_friends.json', 'r', 'utf-8-sig'))
+        friends_list = json.load(
+            codecs.open(friends_file_path, 'r', 'utf-8-sig')
+            )
         return [
             dict_to_friend_obj(f) for f in friends_list['friends']
         ]
@@ -29,8 +40,9 @@ def get_friends_from_json() -> list[Friend]:
 
 
 def get_friends_last_update_time() -> int:
+    friends_file_path = make_friends_file_path()
     try:
-        with open('saved_friends.json', encoding='UTF-8') as friends_file:
+        with open(friends_file_path, encoding='UTF-8') as friends_file:
             updated = json.load(friends_file)['last_time_updated']
             return updated
     except json.decoder.JSONDecodeError:
