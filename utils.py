@@ -64,6 +64,15 @@ def dict_to_friend_obj(friend_dict: dict) -> Friend:
     )
 
 
+def get_mm_formatted_month(month: int) -> str:
+    '''
+        Конвертирует номер месяца в формат mm. Если номер месяца меньше 10, перед номером добавляется "0".  
+    '''
+    if month < 10:
+        return '0' + str(month)
+    return str(month)
+
+
 def get_friends_text(friends_list: list[Friend]) -> str:
     text = ''
     for friend in friends_list:
@@ -71,7 +80,8 @@ def get_friends_text(friends_list: list[Friend]) -> str:
             text += friend.name + ' -> ' + friend.birthday
         else:
             bday = friend.birthday
-            bday_yymmdd = f"{bday.day}.{bday.month}.{bday.year}"
+            formatted_bday_month = get_mm_formatted_month(month=bday.month)
+            bday_yymmdd = f"{bday.day}.{formatted_bday_month}.{bday.year}"
             text += f'[b]{friend.name}[/]' + ' -> ' + bday_yymmdd + '\n'
     return text
 
